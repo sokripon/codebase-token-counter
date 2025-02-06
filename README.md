@@ -17,6 +17,22 @@ A tool for analyzing codebases to understand their token usage and compatibility
 
 ## Installation
 
+You can install and run this tool using either traditional pip or the modern uv package manager.
+
+### Using uv (Recommended)
+
+The script includes inline dependencies, so you can run it directly with uv:
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Run the script directly (no virtual environment needed)
+uv run token_counter.py <path_or_repo>
+```
+
+### Using pip
+
 ```bash
 # Create and activate a virtual environment (recommended)
 python -m venv venv
@@ -28,11 +44,15 @@ pip install -r requirements.txt
 
 ## Usage
 
-```bash
-# Analyze a remote repository
-python token_counter.py https://github.com/username/repo
+You can use the script to analyze both local directories and remote Git repositories:
 
-# Analyze a local directory
+```bash
+# Using uv (recommended)
+uv run token_counter.py https://github.com/username/repo
+uv run token_counter.py .
+
+# Using traditional python
+python token_counter.py https://github.com/username/repo
 python token_counter.py .
 ```
 

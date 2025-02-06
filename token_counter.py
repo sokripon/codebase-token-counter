@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#   "gitpython",
+#   "tqdm",
+#   "transformers",
+# ]
+# ///
+
 import os
 import sys
 import shutil
