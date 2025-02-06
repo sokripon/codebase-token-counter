@@ -36,7 +36,7 @@ FILE_EXTENSIONS = {
     '.pyproject.toml': 'Python Project',
     '.txt': 'Plain Text',
     '.md': 'Markdown',
-    
+
     # Web Technologies
     '.html': 'HTML',
     '.htm': 'HTML',
@@ -55,7 +55,7 @@ FILE_EXTENSIONS = {
     '.hbs': 'Handlebars',
     '.ejs': 'EJS Template',
     '.astro': 'Astro',
-    
+
     # System Programming
     '.c': 'C',
     '.h': 'C Header',
@@ -69,7 +69,7 @@ FILE_EXTENSIONS = {
     '.swift': 'Swift',
     '.m': 'Objective-C',
     '.mm': 'Objective-C++',
-    
+
     # JVM Languages
     '.java': 'Java',
     '.class': 'Java Bytecode',
@@ -79,14 +79,14 @@ FILE_EXTENSIONS = {
     '.groovy': 'Groovy',
     '.scala': 'Scala',
     '.clj': 'Clojure',
-    
+
     # .NET Languages
     '.cs': 'C#',
     '.vb': 'Visual Basic',
     '.fs': 'F#',
     '.fsx': 'F# Script',
     '.xaml': 'XAML',
-    
+
     # Shell and Scripts
     '.sh': 'Shell Script',
     '.bash': 'Bash Script',
@@ -96,13 +96,13 @@ FILE_EXTENSIONS = {
     '.bat': 'Batch File',
     '.cmd': 'Windows Command',
     '.nu': 'Nushell Script',
-    
+
     # Ruby and Related
     '.rb': 'Ruby',
     '.erb': 'Ruby ERB Template',
     '.rake': 'Ruby Rake',
     '.gemspec': 'Ruby Gem Spec',
-    
+
     # Other Programming Languages
     '.pl': 'Perl',
     '.pm': 'Perl Module',
@@ -120,7 +120,7 @@ FILE_EXTENSIONS = {
     '.nim': 'Nim',
     '.ml': 'OCaml',
     '.mli': 'OCaml Interface',
-    
+
     # Configuration and Data
     '.json': 'JSON',
     '.yaml': 'YAML',
@@ -136,7 +136,7 @@ FILE_EXTENSIONS = {
     '.dtd': 'Document Type Definition',
     '.csv': 'CSV',
     '.tsv': 'TSV',
-    
+
     # Documentation and Text
     '.md': 'Markdown',
     '.mdx': 'MDX',
@@ -146,14 +146,14 @@ FILE_EXTENSIONS = {
     '.adoc': 'AsciiDoc',
     '.wiki': 'Wiki Markup',
     '.org': 'Org Mode',
-    
+
     # Database
     '.sql': 'SQL',
     '.psql': 'PostgreSQL',
     '.plsql': 'PL/SQL',
     '.tsql': 'T-SQL',
     '.prisma': 'Prisma Schema',
-    
+
     # Build and Package
     '.gradle': 'Gradle',
     '.maven': 'Maven POM',
@@ -162,30 +162,30 @@ FILE_EXTENSIONS = {
     '.dockerfile': 'Dockerfile',
     '.containerfile': 'Container File',
     '.nix': 'Nix Expression',
-    
+
     # Web Assembly
     '.wat': 'WebAssembly Text',
     '.wasm': 'WebAssembly Binary',
-    
+
     # GraphQL
     '.graphql': 'GraphQL',
     '.gql': 'GraphQL',
-    
+
     # Protocol Buffers and gRPC
     '.proto': 'Protocol Buffers',
-    
+
     # Mobile Development
     '.xcodeproj': 'Xcode Project',
     '.pbxproj': 'Xcode Project',
     '.gradle': 'Android Gradle',
     '.plist': 'Property List',
-    
+
     # Game Development
     '.unity': 'Unity Scene',
     '.prefab': 'Unity Prefab',
     '.godot': 'Godot Resource',
     '.tscn': 'Godot Scene',
-    
+
     # AI/ML
     '.onnx': 'ONNX Model',
     '.h5': 'HDF5 Model',
@@ -209,28 +209,28 @@ def count_tokens(content: str) -> int:
     """Count tokens in the given content using GPT-2 tokenizer."""
     return len(tokenizer.encode(content))
 
-def process_repository(repo_path: str) -> Tuple[int, Dict[str, int]]:
+def process_repository(repo_path: str) -> Tuple[int, Dict[str, int], Dict[str, int]]:
     """Process all files in the repository and count tokens."""
     total_tokens = 0
-    extension_stats = {}
-    
+    extension_stats = {}  # {ext: (tokens, file_count)}
+    file_counts = {}  # {ext: count}
+
     # Define directories to exclude
     exclude_dirs = {'.git', 'venv', '.venv', '__pycache__', '.pytest_cache', '.mypy_cache'}
-    
+
     # Get list of all files for progress bar
     all_files = []
     for root, dirs, files in os.walk(repo_path):
-        # Remove excluded directories
+        # Skip excluded directories
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
-        
+
         for file in files:
             file_path = os.path.join(root, file)
             extension = os.path.splitext(file)[1].lower()
-            print(f"Found file: {file_path} with extension {extension}")
             if extension in FILE_EXTENSIONS and not is_binary(file_path):
                 all_files.append((file_path, extension))
-                print(f"Added file: {file_path} with extension {extension}")
-    
+                file_counts[extension] = file_counts.get(extension, 0) + 1
+
     # Process files with progress bar
     for file_path, extension in tqdm(all_files, desc="Processing files"):
         try:
@@ -238,11 +238,14 @@ def process_repository(repo_path: str) -> Tuple[int, Dict[str, int]]:
                 content = f.read()
                 tokens = count_tokens(content)
                 total_tokens += tokens
-                extension_stats[extension] = extension_stats.get(extension, 0) + tokens
+                if extension not in extension_stats:
+                    extension_stats[extension] = tokens
+                else:
+                    extension_stats[extension] += tokens
         except Exception as e:
             print(f"Error processing {file_path}: {str(e)}")
-                
-    return total_tokens, extension_stats
+
+    return total_tokens, extension_stats, file_counts
 
 def format_number(num: int) -> str:
     """Format a number with thousands separator and appropriate suffix."""
@@ -257,9 +260,9 @@ def main():
     if len(sys.argv) != 2:
         print("Usage: python token_counter.py <repository_url_or_path>")
         sys.exit(1)
-        
+
     target = sys.argv[1]
-    
+
     # Check if the target is a local directory
     if os.path.isdir(target):
         print(f"Analyzing local directory: {target}")
@@ -275,34 +278,38 @@ def main():
             print(f"Error cloning repository: {str(e)}")
             shutil.rmtree(temp_dir)
             sys.exit(1)
-    
+
     print("\nAnalyzing repository...")
     try:
-        total_tokens, extension_stats = process_repository(analyze_path)
+        total_tokens, extension_stats, file_counts = process_repository(analyze_path)
     except Exception as e:
         print(f"Error analyzing repository: {str(e)}")
         if 'temp_dir' in locals():
             shutil.rmtree(temp_dir)
         sys.exit(1)
-        
+
     # Print results
     print("\nResults:")
     print(f"Total tokens: {format_number(total_tokens)} ({total_tokens:,})")
     print("\nTokens by file extension:")
     for ext, count in sorted(extension_stats.items(), key=lambda x: x[1], reverse=True):
-        print(f"{ext:8} {format_number(count):>8} ({count:,})")
-        
+        files = file_counts[ext]
+        print(f"{ext:8} {format_number(count):>8} ({count:,}) [{files} file{'s' if files != 1 else ''}]")
+
     # Group results by technology category
     tech_stats = {}
+    tech_file_counts = {}
     for ext, count in extension_stats.items():
-        tech = FILE_EXTENSIONS.get(ext, 'Other')
+        tech = FILE_EXTENSIONS[ext]
         tech_stats[tech] = tech_stats.get(tech, 0) + count
-    
+        tech_file_counts[tech] = tech_file_counts.get(tech, 0) + file_counts[ext]
+
     # Print results by technology
     print("\nTokens by Technology:")
     for tech, count in sorted(tech_stats.items(), key=lambda x: x[1], reverse=True):
-        print(f"{tech:20} {format_number(count):>8} ({count:,})")
-    
+        files = tech_file_counts[tech]
+        print(f"{tech:20} {format_number(count):>8} ({count:,}) [{files} file{'s' if files != 1 else ''}]")
+
     # Print context window comparisons
     print("\nContext Window Comparisons:")
     windows = {
@@ -311,28 +318,28 @@ def main():
         "GPT-4 (8K)": 8192,
         "GPT-4 (32K)": 32768,
         "GPT-4 Turbo (128K)": 128000,
-        
+
         # Anthropic Models
         "Claude 2 (100K)": 100000,
         "Claude 3 Opus (200K)": 200000,
         "Claude 3 Sonnet (200K)": 200000,
         "Claude 3 Haiku (200K)": 200000,
-        
+
         # Google Models
         "Gemini Pro (32K)": 32768,
         "PaLM 2 (8K)": 8192,
-        
+
         # Meta Models
         "Llama 2 (4K)": 4096,
         "Code Llama (100K)": 100000,
-        
+
         # Other Models
         "Mistral Large (32K)": 32768,
         "Mixtral 8x7B (32K)": 32768,
         "Yi-34B (200K)": 200000,
         "Cohere Command (128K)": 128000,
     }
-    
+
     for model, window in windows.items():
         percentage = (total_tokens / window) * 100
         print(f"{model:20} {percentage:.1f}% of context window")

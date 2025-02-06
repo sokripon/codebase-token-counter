@@ -13,7 +13,7 @@ A tool for analyzing codebases to understand their token usage and compatibility
   - Google Models (Gemini Pro, PaLM 2)
   - Meta Models (Llama 2, Code Llama)
   - Other Models (Mistral, Mixtral, Yi, Cohere)
-- **Intelligent Directory Exclusion**: Automatically excludes common non-source directories (venv, .git, __pycache__, etc.)
+- **Intelligent Directory Exclusion**: Automatically excludes common non-source directories (venv, .git, **pycache**, etc.)
 
 ## Installation
 
@@ -61,30 +61,37 @@ python token_counter.py .
 The tool provides a detailed breakdown of token usage:
 
 1. **Total Token Count**: Overall tokens in the codebase
-2. **File Extension Breakdown**: Tokens per file extension
-3. **Technology Distribution**: Tokens grouped by programming language/technology
+2. **File Extension Breakdown**: Tokens and file count per extension
+3. **Technology Distribution**: Tokens and file count grouped by programming language/technology
 4. **Context Window Analysis**: Percentage of various LLM context windows used
 
 Example output:
-```
+
+```text
 Results:
-Total tokens: 4.5K (4,497)
+Total tokens: 5.7K (5,664)
+
+Tokens by file extension:
+.py          4.4K (4,378) [1 file]
+.md          1.3K (1,258) [1 file]
+.txt           28 (28) [1 file]
 
 Tokens by Technology:
-Python                   4.3K (4,337)
-Markdown                  132 (132)
-Plain Text                 28 (28)
+Python                   4.4K (4,378) [1 file]
+Markdown                 1.3K (1,258) [1 file]
+Plain Text                 28 (28) [1 file]
 
 Context Window Comparisons:
-GPT-3.5 (4K)         109.8% of context window
-GPT-4 (8K)           54.9% of context window
-Claude 3 (200K)      2.2% of context window
+GPT-3.5 (4K)         138.3% of context window
+GPT-4 (8K)           69.1% of context window
+Claude 3 Haiku (200K) 2.8% of context window
 ...
 ```
 
 ## Supported File Types
 
 The tool supports a wide range of file types including:
+
 - Programming Languages (Python, JavaScript, TypeScript, Java, C/C++, etc.)
 - Web Technologies (HTML, CSS, SCSS, Vue, React, etc.)
 - Documentation (Markdown, reStructuredText)
@@ -94,6 +101,7 @@ The tool supports a wide range of file types including:
 ## Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests for:
+
 - Adding support for new file types
 - Including new LLM context windows
 - Improving token counting accuracy
