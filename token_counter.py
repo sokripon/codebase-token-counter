@@ -6,6 +6,7 @@
 #   "gitpython",
 #   "tqdm",
 #   "transformers",
+#   "rich",
 # ]
 # ///
 
@@ -19,8 +20,13 @@ from typing import Dict, List, Tuple
 from git import Repo
 from tqdm import tqdm
 from transformers import AutoTokenizer
+from rich.console import Console
+from rich.table import Table
+from rich.progress import track
+from rich import print as rprint
 
-# Initialize the tokenizer (using GPT-2 tokenizer as it's commonly used)
+# Initialize the console and tokenizer
+console = Console()
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
 # File extensions mapped to their technologies
@@ -209,30 +215,37 @@ def count_tokens(content: str) -> int:
     """Count tokens in the given content using GPT-2 tokenizer."""
     return len(tokenizer.encode(content))
 
+def format_number(num: int) -> str:
+    """Format a number with thousands separator and appropriate suffix."""
+    if num >= 1_000_000:
+        return f"{num/1_000_000:.1f}M"
+    elif num >= 1_000:
+        return f"{num/1_000:.1f}K"
+    return str(num)
+
 def process_repository(repo_path: str) -> Tuple[int, Dict[str, int], Dict[str, int]]:
     """Process all files in the repository and count tokens."""
     total_tokens = 0
-    extension_stats = {}  # {ext: (tokens, file_count)}
-    file_counts = {}  # {ext: count}
+    extension_stats = {}
+    file_counts = {}
 
     # Define directories to exclude
     exclude_dirs = {'.git', 'venv', '.venv', '__pycache__', '.pytest_cache', '.mypy_cache'}
 
     # Get list of all files for progress bar
     all_files = []
-    for root, dirs, files in os.walk(repo_path):
-        # Skip excluded directories
-        dirs[:] = [d for d in dirs if d not in exclude_dirs]
-
-        for file in files:
-            file_path = os.path.join(root, file)
-            extension = os.path.splitext(file)[1].lower()
-            if extension in FILE_EXTENSIONS and not is_binary(file_path):
-                all_files.append((file_path, extension))
-                file_counts[extension] = file_counts.get(extension, 0) + 1
+    with console.status("[bold green]Scanning repository..."):
+        for root, dirs, files in os.walk(repo_path):
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            for file in files:
+                file_path = os.path.join(root, file)
+                extension = os.path.splitext(file)[1].lower()
+                if extension in FILE_EXTENSIONS and not is_binary(file_path):
+                    all_files.append((file_path, extension))
+                    file_counts[extension] = file_counts.get(extension, 0) + 1
 
     # Process files with progress bar
-    for file_path, extension in tqdm(all_files, desc="Processing files"):
+    for file_path, extension in track(all_files, description="[bold blue]Processing files"):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -243,58 +256,60 @@ def process_repository(repo_path: str) -> Tuple[int, Dict[str, int], Dict[str, i
                 else:
                     extension_stats[extension] += tokens
         except Exception as e:
-            print(f"Error processing {file_path}: {str(e)}")
+            console.print(f"[red]Error processing {file_path}: {str(e)}[/red]")
 
     return total_tokens, extension_stats, file_counts
 
-def format_number(num: int) -> str:
-    """Format a number with thousands separator and appropriate suffix."""
-    if num < 1000:
-        return str(num)
-    elif num < 1_000_000:
-        return f"{num/1000:.1f}K"
-    else:
-        return f"{num/1_000_000:.1f}M"
-
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python token_counter.py <repository_url_or_path>")
+        console.print("[red]Usage: python token_counter.py <repository_url_or_path>[/red]")
         sys.exit(1)
 
     target = sys.argv[1]
+    temp_dir = None
 
     # Check if the target is a local directory
     if os.path.isdir(target):
-        print(f"Analyzing local directory: {target}")
+        console.print(f"[green]Analyzing local directory: {target}[/green]")
         analyze_path = target
     else:
-        # Create a temporary directory for cloning
+        # Clone the repository to a temporary directory
         temp_dir = tempfile.mkdtemp()
+        console.print(f"[yellow]Cloning repository: {target}[/yellow]")
         try:
-            print(f"Cloning repository: {target}")
-            repo = Repo.clone_from(target, temp_dir)
+            Repo.clone_from(target, temp_dir)
             analyze_path = temp_dir
         except Exception as e:
-            print(f"Error cloning repository: {str(e)}")
+            console.print(f"[red]Error cloning repository: {str(e)}[/red]")
             shutil.rmtree(temp_dir)
             sys.exit(1)
 
-    print("\nAnalyzing repository...")
+    console.print("\n[bold]Analyzing repository...[/bold]")
     try:
         total_tokens, extension_stats, file_counts = process_repository(analyze_path)
     except Exception as e:
-        print(f"Error analyzing repository: {str(e)}")
-        if 'temp_dir' in locals():
+        console.print(f"[red]Error analyzing repository: {str(e)}[/red]")
+        if temp_dir:
             shutil.rmtree(temp_dir)
         sys.exit(1)
 
     # Print results
-    print("\nResults:")
-    print(f"Total tokens: {format_number(total_tokens)} ({total_tokens:,})")
-    print("\nTokens by file extension:")
+    console.print("\n[bold cyan]Results:[/bold cyan]")
+    console.print(f"Total tokens: [green]{format_number(total_tokens)}[/green] ({total_tokens:,})")
+
+    # Create and populate extension table
+    ext_table = Table(title="\n[bold]Tokens by file extension[/bold]")
+    ext_table.add_column("Extension", style="cyan")
+    ext_table.add_column("Tokens", justify="right", style="green")
+    ext_table.add_column("Files", justify="right", style="yellow")
+
     for ext, count in sorted(extension_stats.items(), key=lambda x: x[1], reverse=True):
-        files = file_counts[ext]
-        print(f"{ext:8} {format_number(count):>8} ({count:,}) [{files} file{'s' if files != 1 else ''}]")
+        ext_table.add_row(
+            ext,
+            f"{format_number(count)} ({count:,})",
+            f"{file_counts[ext]} file{'s' if file_counts[ext] != 1 else ''}"
+        )
+    console.print(ext_table)
 
     # Group results by technology category
     tech_stats = {}
@@ -304,14 +319,21 @@ def main():
         tech_stats[tech] = tech_stats.get(tech, 0) + count
         tech_file_counts[tech] = tech_file_counts.get(tech, 0) + file_counts[ext]
 
-    # Print results by technology
-    print("\nTokens by Technology:")
-    for tech, count in sorted(tech_stats.items(), key=lambda x: x[1], reverse=True):
-        files = tech_file_counts[tech]
-        print(f"{tech:20} {format_number(count):>8} ({count:,}) [{files} file{'s' if files != 1 else ''}]")
+    # Create and populate technology table
+    tech_table = Table(title="\n[bold]Tokens by Technology[/bold]")
+    tech_table.add_column("Technology", style="magenta")
+    tech_table.add_column("Tokens", justify="right", style="green")
+    tech_table.add_column("Files", justify="right", style="yellow")
 
-    # Print context window comparisons
-    print("\nContext Window Comparisons:")
+    for tech, count in sorted(tech_stats.items(), key=lambda x: x[1], reverse=True):
+        tech_table.add_row(
+            tech,
+            f"{format_number(count)} ({count:,})",
+            f"{tech_file_counts[tech]} file{'s' if tech_file_counts[tech] != 1 else ''}"
+        )
+    console.print(tech_table)
+
+    # Create and populate context window table
     windows = {
         # OpenAI Models
         "GPT-3.5 (4K)": 4096,
@@ -340,12 +362,17 @@ def main():
         "Cohere Command (128K)": 128000,
     }
 
+    context_table = Table(title="\n[bold]Context Window Comparisons[/bold]")
+    context_table.add_column("Model", style="blue")
+    context_table.add_column("Context Usage", justify="right")
+
     for model, window in windows.items():
         percentage = (total_tokens / window) * 100
-        print(f"{model:20} {percentage:.1f}% of context window")
+        color = "red" if percentage > 100 else "green"
+        context_table.add_row(model, f"[{color}]{percentage:.1f}%[/{color}]")
+    console.print(context_table)
 
-    # Clean up temp directory if we created one
-    if 'temp_dir' in locals():
+    if temp_dir:
         shutil.rmtree(temp_dir)
 
 if __name__ == "__main__":

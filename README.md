@@ -65,28 +65,56 @@ The tool provides a detailed breakdown of token usage:
 3. **Technology Distribution**: Tokens and file count grouped by programming language/technology
 4. **Context Window Analysis**: Percentage of various LLM context windows used
 
-Example output:
+Example output (text only):
 
 ```text
 Results:
-Total tokens: 5.7K (5,664)
+Total tokens: 5.9K (5,942)
 
-Tokens by file extension:
-.py          4.4K (4,378) [1 file]
-.md          1.3K (1,258) [1 file]
-.txt           28 (28) [1 file]
+      Tokens by file extension
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Extension ┃       Tokens ┃  Files ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ .py       │ 4.8K (4,828) │ 1 file │
+│ .md       │ 1.1K (1,086) │ 1 file │
+│ .txt      │      28 (28) │ 1 file │
+└───────────┴──────────────┴────────┘
 
-Tokens by Technology:
-Python                   4.4K (4,378) [1 file]
-Markdown                 1.3K (1,258) [1 file]
-Plain Text                 28 (28) [1 file]
+         Tokens by Technology
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Technology ┃       Tokens ┃  Files ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ Python     │ 4.8K (4,828) │ 1 file │
+│ Markdown   │ 1.1K (1,086) │ 1 file │
+│ Plain Text │      28 (28) │ 1 file │
+└────────────┴──────────────┴────────┘
 
-Context Window Comparisons:
-GPT-3.5 (4K)         138.3% of context window
-GPT-4 (8K)           69.1% of context window
-Claude 3 Haiku (200K) 2.8% of context window
-...
+        Context Window Comparisons
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Model                  ┃ Context Usage ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ GPT-3.5 (4K)           │        145.1% │
+│ GPT-4 (8K)             │         72.5% │
+│ GPT-4 (32K)            │         18.1% │
+│ GPT-4 Turbo (128K)     │          4.6% │
+│ Claude 2 (100K)        │          5.9% │
+│ Claude 3 Opus (200K)   │          3.0% │
+│ Claude 3 Sonnet (200K) │          3.0% │
+│ Claude 3 Haiku (200K)  │          3.0% │
+│ Gemini Pro (32K)       │         18.1% │
+│ PaLM 2 (8K)            │         72.5% │
+│ Llama 2 (4K)           │        145.1% │
+│ Code Llama (100K)      │          5.9% │
+│ Mistral Large (32K)    │         18.1% │
+│ Mixtral 8x7B (32K)     │         18.1% │
+│ Yi-34B (200K)          │          3.0% │
+│ Cohere Command (128K)  │          4.6% │
+└────────────────────────┴───────────────┘
 ```
+
+Example output (image w/ colors):
+
+![Result Example](misc/result_example.png)
 
 ## Supported File Types
 
