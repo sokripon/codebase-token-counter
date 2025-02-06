@@ -13,9 +13,25 @@ A tool for analyzing codebases to understand their token usage and compatibility
   - Google Models (Gemini Pro, PaLM 2)
   - Meta Models (Llama 2, Code Llama)
   - Other Models (Mistral, Mixtral, Yi, Cohere)
-- **Intelligent Directory Exclusion**: Automatically excludes common non-source directories (venv, .git, __pycache__, etc.)
+- **Intelligent Directory Exclusion**: Automatically excludes common non-source directories (venv, .git, **pycache**, etc.)
 
 ## Installation
+
+You can install and run this tool using either traditional pip or the modern uv package manager.
+
+### Using uv (Recommended)
+
+The script includes inline dependencies, so you can run it directly with uv:
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Run the script directly (no virtual environment needed)
+uv run token_counter.py <path_or_repo>
+```
+
+### Using pip
 
 ```bash
 # Create and activate a virtual environment (recommended)
@@ -28,11 +44,15 @@ pip install -r requirements.txt
 
 ## Usage
 
-```bash
-# Analyze a remote repository
-python token_counter.py https://github.com/username/repo
+You can use the script to analyze both local directories and remote Git repositories:
 
-# Analyze a local directory
+```bash
+# Using uv (recommended)
+uv run token_counter.py https://github.com/username/repo
+uv run token_counter.py .
+
+# Using traditional python
+python token_counter.py https://github.com/username/repo
 python token_counter.py .
 ```
 
@@ -41,30 +61,65 @@ python token_counter.py .
 The tool provides a detailed breakdown of token usage:
 
 1. **Total Token Count**: Overall tokens in the codebase
-2. **File Extension Breakdown**: Tokens per file extension
-3. **Technology Distribution**: Tokens grouped by programming language/technology
+2. **File Extension Breakdown**: Tokens and file count per extension
+3. **Technology Distribution**: Tokens and file count grouped by programming language/technology
 4. **Context Window Analysis**: Percentage of various LLM context windows used
 
-Example output:
-```
+Example output (text only):
+
+```text
 Results:
-Total tokens: 4.5K (4,497)
+Total tokens: 5.9K (5,942)
 
-Tokens by Technology:
-Python                   4.3K (4,337)
-Markdown                  132 (132)
-Plain Text                 28 (28)
+      Tokens by file extension
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Extension ┃       Tokens ┃  Files ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ .py       │ 4.8K (4,828) │ 1 file │
+│ .md       │ 1.1K (1,086) │ 1 file │
+│ .txt      │      28 (28) │ 1 file │
+└───────────┴──────────────┴────────┘
 
-Context Window Comparisons:
-GPT-3.5 (4K)         109.8% of context window
-GPT-4 (8K)           54.9% of context window
-Claude 3 (200K)      2.2% of context window
-...
+         Tokens by Technology
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━┓
+┃ Technology ┃       Tokens ┃  Files ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━┩
+│ Python     │ 4.8K (4,828) │ 1 file │
+│ Markdown   │ 1.1K (1,086) │ 1 file │
+│ Plain Text │      28 (28) │ 1 file │
+└────────────┴──────────────┴────────┘
+
+        Context Window Comparisons
+┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Model                  ┃ Context Usage ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ GPT-3.5 (4K)           │        145.1% │
+│ GPT-4 (8K)             │         72.5% │
+│ GPT-4 (32K)            │         18.1% │
+│ GPT-4 Turbo (128K)     │          4.6% │
+│ Claude 2 (100K)        │          5.9% │
+│ Claude 3 Opus (200K)   │          3.0% │
+│ Claude 3 Sonnet (200K) │          3.0% │
+│ Claude 3 Haiku (200K)  │          3.0% │
+│ Gemini Pro (32K)       │         18.1% │
+│ PaLM 2 (8K)            │         72.5% │
+│ Llama 2 (4K)           │        145.1% │
+│ Code Llama (100K)      │          5.9% │
+│ Mistral Large (32K)    │         18.1% │
+│ Mixtral 8x7B (32K)     │         18.1% │
+│ Yi-34B (200K)          │          3.0% │
+│ Cohere Command (128K)  │          4.6% │
+└────────────────────────┴───────────────┘
 ```
+
+Example output (image w/ colors):
+
+![Result Example](misc/result_example.png)
 
 ## Supported File Types
 
 The tool supports a wide range of file types including:
+
 - Programming Languages (Python, JavaScript, TypeScript, Java, C/C++, etc.)
 - Web Technologies (HTML, CSS, SCSS, Vue, React, etc.)
 - Documentation (Markdown, reStructuredText)
@@ -74,6 +129,7 @@ The tool supports a wide range of file types including:
 ## Contributing
 
 Contributions are welcome! Feel free to open issues or submit pull requests for:
+
 - Adding support for new file types
 - Including new LLM context windows
 - Improving token counting accuracy
