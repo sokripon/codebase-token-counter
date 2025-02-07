@@ -17,6 +17,14 @@ jobs:
       with:
         fetch-depth: 0
     
+    - name: Verify requirements.txt exists
+      run: |
+        ls -la
+        if [ ! -f "requirements.txt" ]; then
+          echo "requirements.txt is missing"
+          exit 1
+        fi
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
