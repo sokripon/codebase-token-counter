@@ -1,5 +1,8 @@
 # Code Token Counter
 
+[![PyPI version](https://badge.fury.io/py/codebase-token-counter.svg)](https://badge.fury.io/py/codebase-token-counter)
+[![Test](https://github.com/liatrio/codebase-token-counter/actions/workflows/test.yml/badge.svg)](https://github.com/liatrio/codebase-token-counter/actions/workflows/test.yml)
+
 A tool for analyzing codebases to understand their token usage and compatibility with various Large Language Models (LLMs). This tool helps developers understand if their code can fit within different LLM context windows and how it's distributed across different technologies.
 
 ## Features
@@ -115,6 +118,26 @@ Total tokens: 5.9K (5,942)
 Example output (image w/ colors):
 
 ![Result Example](misc/result_example.png)
+
+## Installation
+
+You can install the package directly from PyPI:
+
+```bash
+pip install codebase-token-counter
+```
+
+## Usage
+
+After installation, you can use the tool from the command line:
+
+```bash
+# Analyze a local directory
+token-counter /path/to/your/codebase
+
+# Analyze a remote Git repository
+token-counter https://github.com/username/repo.git
+```
 
 ## Supported File Types
 
